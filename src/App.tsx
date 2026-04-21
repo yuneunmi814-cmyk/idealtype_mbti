@@ -43,11 +43,24 @@ export default function App() {
       setTimeout(() => {
         setCurrent((c) => c + 1)
         setAnimating(false)
-      }, 300)
+      }, 250)
     } else {
       const mbti = calculateMBTI(newAnswers)
       setResult(mbti)
       setPage('result')
+    }
+  }
+
+  function handleBack() {
+    if (animating) return
+    if (current === 0) {
+      setPage('landing')
+    } else {
+      setAnimating(true)
+      setTimeout(() => {
+        setCurrent((c) => c - 1)
+        setAnimating(false)
+      }, 250)
     }
   }
 
@@ -65,6 +78,7 @@ export default function App() {
       total={questions.length}
       question={questions[current]}
       onAnswer={handleAnswer}
+      onBack={handleBack}
       animating={animating}
     />
   )
@@ -89,7 +103,7 @@ function Landing({ onStart }: { onStart: () => void }) {
           <span className="highlight-bad">최악</span>의 짝꿍은?
         </h1>
         <p className="landing-desc">
-          20가지 질문으로 당신의 MBTI를 알아보고<br />
+          20가지 상황 질문으로 당신의 MBTI를 알아보고<br />
           가장 잘 맞는 유형과 가장 안 맞는 유형을 발견해보세요 💘
         </p>
         <div className="landing-mbti-grid">
@@ -113,33 +127,44 @@ function Landing({ onStart }: { onStart: () => void }) {
 }
 
 function Quiz({
-  current, total, question, onAnswer, animating,
+  current, total, question, onAnswer, onBack, animating,
 }: {
   current: number
   total: number
   question: (typeof questions)[0]
   onAnswer: (c: 'A' | 'B') => void
+  onBack: () => void
   animating: boolean
 }) {
-  const progress = ((current) / total) * 100
+  const progress = (current / total) * 100
   const dimensionLabel: Record<string, string> = {
     EI: '에너지 방향', SN: '인식 방식', TF: '판단 기준', JP: '생활 양식',
   }
+
+  const lines = question.text.split('\n')
+
   return (
     <div className="quiz">
       <div className="quiz-header">
+        <div className="quiz-top-row">
+          <button className="back-btn" onClick={onBack}>
+            ← {current === 0 ? '처음으로' : '이전'}
+          </button>
+          <span className="quiz-count">{current + 1} / {total}</span>
+        </div>
         <div className="quiz-progress-bar">
           <div className="quiz-progress-fill" style={{ width: `${progress}%` }} />
         </div>
-        <div className="quiz-meta">
-          <span className="quiz-dimension">{dimensionLabel[question.dimension]}</span>
-          <span className="quiz-count">{current + 1} / {total}</span>
-        </div>
+        <div className="quiz-dimension-label">{dimensionLabel[question.dimension]}</div>
       </div>
 
       <div className={`quiz-card ${animating ? 'fade-out' : 'fade-in'}`}>
         <div className="quiz-number">Q{current + 1}</div>
-        <h2 className="quiz-question">{question.text}</h2>
+        <h2 className="quiz-question">
+          {lines.map((line, i) => (
+            <span key={i}>{line}{i < lines.length - 1 && <br />}</span>
+          ))}
+        </h2>
         <div className="quiz-choices">
           <button className="choice-btn choice-a" onClick={() => onAnswer('A')}>
             <span className="choice-label">A</span>
