@@ -206,6 +206,19 @@ function Result({ mbti, onRestart }: { mbti: MBTIType; onRestart: () => void }) 
         </div>
       </div>
 
+      <div className="result-jobs">
+        <div className="section-title">💼 어울리는 직업</div>
+        {info.jobs.map((job) => (
+          <div key={job.title} className="job-card">
+            <span className="job-emoji">{job.emoji}</span>
+            <div>
+              <div className="job-title">{job.title}</div>
+              <div className="job-reason">{job.reason}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
       <div className="result-matches">
         <div className="match-card best-card">
           <div className="match-header">
