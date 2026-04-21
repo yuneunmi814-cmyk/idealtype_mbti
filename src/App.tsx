@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import html2canvas from 'html2canvas'
 import { questions, mbtiInfo, type MBTIType } from './data/mbtiData'
 import './App.css'
 
@@ -184,13 +185,109 @@ function Result({ mbti, onRestart }: { mbti: MBTIType; onRestart: () => void }) 
   const info = mbtiInfo[mbti]
   const best = mbtiInfo[info.bestMatch]
   const worst = mbtiInfo[info.worstMatch]
+  const shareRef = useRef<HTMLDivElement>(null)
+  const [capturing, setCapturing] = useState(false)
 
-  function share() {
-    const text = `나의 MBTI는 ${mbti} ${info.nickname}!\n최고의 짝꿍: ${info.bestMatch} ${best.nickname}\n최악의 짝꿍: ${info.worstMatch} ${worst.nickname}`
-    navigator.clipboard.writeText(text).then(() => alert('결과가 클립보드에 복사됐어요! 📋'))
+  async function shareAsImage() {
+    if (!shareRef.current || capturing) return
+    setCapturing(true)
+    try {
+      const canvas = await html2canvas(shareRef.current, {
+        scale: 2,
+        backgroundColor: '#0f0f1a',
+        useCORS: true,
+        logging: false,
+      })
+      const link = document.createElement('a')
+      link.download = `MBTI_${mbti}_결과.png`
+      link.href = canvas.toDataURL('image/png')
+      link.click()
+    } finally {
+      setCapturing(false)
+    }
   }
 
   return (
+    <>
+    {/* 이미지 캡처용 카드 (화면 밖에 숨겨둠) */}
+    <div style={{ position: 'fixed', left: '-9999px', top: 0, pointerEvents: 'none' }}>
+      <div ref={shareRef} style={{
+        width: '400px',
+        background: 'linear-gradient(160deg, #0f0f1a 0%, #1a0a2e 50%, #0d1b3e 100%)',
+        padding: '40px 32px 32px',
+        fontFamily: 'system-ui, sans-serif',
+        boxSizing: 'border-box',
+      }}>
+        {/* 헤더 */}
+        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+          <div style={{
+            display: 'inline-block',
+            background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+            color: 'white', fontSize: '11px', fontWeight: 700,
+            letterSpacing: '2px', padding: '4px 14px', borderRadius: '100px',
+            marginBottom: '20px', textTransform: 'uppercase',
+          }}>MBTI 궁합 테스트</div>
+
+          <div style={{ fontSize: '56px', lineHeight: 1, marginBottom: '12px' }}>{info.emoji}</div>
+          <div style={{
+            display: 'inline-block',
+            background: info.color, color: 'white',
+            fontSize: '26px', fontWeight: 900, letterSpacing: '4px',
+            padding: '8px 24px', borderRadius: '100px', marginBottom: '8px',
+          }}>{mbti}</div>
+          <div style={{ fontSize: '15px', color: '#d1d5db', fontWeight: 600, marginBottom: '12px' }}>{info.nickname}</div>
+          <div style={{ fontSize: '13px', color: '#9ca3af', lineHeight: 1.6, padding: '0 8px' }}>{info.description}</div>
+        </div>
+
+        {/* 구분선 */}
+        <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', marginBottom: '24px' }} />
+
+        {/* 직업 */}
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1.5px', color: '#6b7280', textTransform: 'uppercase', marginBottom: '12px' }}>💼 어울리는 직업</div>
+          {info.jobs.map((job) => (
+            <div key={job.title} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <span style={{ fontSize: '20px' }}>{job.emoji}</span>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: '#f3f4f6' }}>{job.title}</div>
+                <div style={{ fontSize: '11px', color: '#6b7280' }}>{job.reason}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* 구분선 */}
+        <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', marginBottom: '24px' }} />
+
+        {/* 궁합 */}
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '28px' }}>
+          <div style={{
+            flex: 1, padding: '16px', borderRadius: '14px',
+            background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)',
+          }}>
+            <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 700, letterSpacing: '1px', marginBottom: '10px' }}>💘 최고의 짝꿍</div>
+            <div style={{ fontSize: '24px', marginBottom: '4px' }}>{best.emoji}</div>
+            <div style={{ fontSize: '18px', fontWeight: 900, color: best.color, letterSpacing: '2px' }}>{info.bestMatch}</div>
+            <div style={{ fontSize: '12px', color: '#9ca3af' }}>{best.nickname}</div>
+          </div>
+          <div style={{
+            flex: 1, padding: '16px', borderRadius: '14px',
+            background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+          }}>
+            <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 700, letterSpacing: '1px', marginBottom: '10px' }}>💔 최악의 짝꿍</div>
+            <div style={{ fontSize: '24px', marginBottom: '4px' }}>{worst.emoji}</div>
+            <div style={{ fontSize: '18px', fontWeight: 900, color: worst.color, letterSpacing: '2px' }}>{info.worstMatch}</div>
+            <div style={{ fontSize: '12px', color: '#9ca3af' }}>{worst.nickname}</div>
+          </div>
+        </div>
+
+        {/* 하단 브랜딩 */}
+        <div style={{ textAlign: 'center', fontSize: '11px', color: '#374151', letterSpacing: '1px' }}>
+          MBTI 궁합 테스트 · idealtype-mbti
+        </div>
+      </div>
+    </div>
+
     <div className="result">
       <div className="result-header">
         <div className="result-my-type" style={{ borderColor: info.color, boxShadow: `0 0 40px ${info.color}40` }}>
@@ -252,9 +349,12 @@ function Result({ mbti, onRestart }: { mbti: MBTIType; onRestart: () => void }) 
       </div>
 
       <div className="result-actions">
-        <button className="share-btn" onClick={share}>결과 공유하기 📋</button>
+        <button className="share-btn" onClick={shareAsImage} disabled={capturing}>
+          {capturing ? '이미지 생성 중...' : '이미지로 저장 🖼️'}
+        </button>
         <button className="restart-btn" onClick={onRestart}>다시 하기 🔄</button>
       </div>
     </div>
+    </>
   )
 }
